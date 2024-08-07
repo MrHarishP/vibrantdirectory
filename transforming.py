@@ -1,5 +1,6 @@
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup  
+import pandas as pd 
 
 # Step 1: Fetch the HTML content
 url = "https://worldfoodindia.gov.in/2017/exhibitor-list.html"
@@ -8,24 +9,32 @@ html_content = response.text
 
 # Step 2: Parse the HTML content using BeautifulSoup
 soup = BeautifulSoup(html_content, 'html.parser')
-tables = soup.find_all('table', class_='sectionlist')
-# print(tables,'------>')
+# target_div = soup.find('div', class_='sectionlist')
 
-exhibitors = []
+all_company_data=[]
+all_div = soup.find_all('div', class_='modal-body')
+for target_div in all_div:
+    table = target_div.find('table')
 
-headers = []
-# Step 3: Extract data from the table
-for table in tables:
-    for tr in table.find_all('tr')[1:]:  # Skip the header row
-        tds = tr.find_all('td')
-        # print(tds,'---->')
-        # Extract headers from the first row
-        if tr == table.find_all('tr')[0]:  # Header row
-            headers = [td.text.strip() for td in tds]
-            print(headers,'---')
-        else:
-            # Extract data from each column
-            row_data = [td.text.strip() for td in tds]
-            exhibitors.append(dict(zip(headers, row_data)))
-            # print(exhibitors,'---->')
 
+    def getdata(col):
+        return col.get_text()
+    line=[]
+    for tbody in table.find_all('tr'):
+        print("--->start",tbody)
+        row_data =list(map(getdata,tbody.find_all('td')))
+        if len(row_data) >= 2 and row_data[0] in ['Company Name','City','Contact Person','Telephone']:
+            # print(row_data)
+            # line+=row_data[1]+','
+            line.append(row_data[1])
+            # company_name = row_data[1]
+        # line+=line+'\n'
+
+    all_company_data.append(line)
+    # print(company_name)
+    print("endline--->",line)
+        
+df = pd.DataFrame(all_company_data)
+df.to_csv('Transforming_the_food_economy.csv', index=False)
+print("Data has been saved to company_data.csv")
+        
